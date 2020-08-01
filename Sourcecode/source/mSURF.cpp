@@ -3,7 +3,7 @@
 #include "hls_math.h"
 
 using namespace my;
-
+//#define DEBUG
 #ifdef DEBUG
 #include <fstream>
 #endif
@@ -227,7 +227,7 @@ void SURF::calcLayerDetAndTrace(
 			for(int k = 0; k < nTotalLayers; k++)
 			{
 				/*考虑此模板的采样步长*/
-				if(r % sampleStep[k] == 0 && c % sampleStep[k] == 0)
+				if((r & (((int)1 << sampleStep[k]) - 1)) == 0 && (c & (((int)1 << sampleStep[k]) - 1)) == 0)
 				{
 					int cOffset = c - Dx[k][3].x2;
 
@@ -393,6 +393,13 @@ void SURF::findCharacteristicPoint(
 		findCharacteristicPoint_r0:for(int r = 0; r < detRow[midIndex - 1]; r++)
 			{
 				rIndex = r % 3;
+//			if(rIndex < 3)
+//			{
+//				rIndex++;
+//			}
+//			else{
+//				rIndex = 0;
+//			}
 #ifdef DEBUG
 				fout_NIndex << "将第" << r <<"行写入N的第" << rIndex << "行"<< std::endl;
 #endif
@@ -500,8 +507,8 @@ void SURF::findCharacteristicPoint(
 										 && val0 > N1[2][bRow[2]][c - 2] && val0 > N1[2][bRow[2]][c - 1] && val0 > N1[2][bRow[2]][c])
 									{
 										/*将坐标转换到原图像中的坐标*/
-										point.y = r * sampleStep[midIndex] + iSOffset;
-										point.x = c * sampleStep[midIndex] + iSOffset;
+										point.y = (r << sampleStep[midIndex]) + iSOffset;
+										point.x = (c << sampleStep[midIndex]) + iSOffset;
 #ifdef DEBUG
 										fout_keyPoint << "(" << point.y << "," << point.x << ")" << std::endl;
 #endif
@@ -522,8 +529,8 @@ void SURF::findCharacteristicPoint(
 										 && val0 > N2[2][bRow[1]][c - 2] && val0 > N2[2][bRow[1]][c - 1] && val0 > N2[2][bRow[1]][c]
 										 && val0 > N2[2][bRow[2]][c - 2] && val0 > N2[2][bRow[2]][c - 1] && val0 > N2[2][bRow[2]][c])
 									{
-										point.y = r * sampleStep[midIndex] + iSOffset;
-										point.x = c * sampleStep[midIndex] + iSOffset;
+										point.y = (r << sampleStep[midIndex]) + iSOffset;
+										point.x = (c << sampleStep[midIndex]) + iSOffset;
 #ifdef DEBUG
 										fout_keyPoint << "(" << point.y << "," << point.x << ")" << std::endl;
 #endif
@@ -544,8 +551,8 @@ void SURF::findCharacteristicPoint(
 										 && val0 > N3[2][bRow[1]][c - 2] && val0 > N3[2][bRow[1]][c - 1] && val0 > N3[2][bRow[1]][c]
 										 && val0 > N3[2][bRow[2]][c - 2] && val0 > N3[2][bRow[2]][c - 1] && val0 > N3[2][bRow[2]][c])
 									{
-										point.y = r * sampleStep[midIndex] + iSOffset;
-										point.x = c * sampleStep[midIndex] + iSOffset;
+										point.y = (r << sampleStep[midIndex]) + iSOffset;
+										point.x = (c << sampleStep[midIndex]) + iSOffset;
 #ifdef DEBUG
 										fout_keyPoint << "(" << point.y << "," << point.x << ")" << std::endl;
 #endif
@@ -568,7 +575,7 @@ void SURF::findCharacteristicPoint(
 
 void SURF::HessianDetector(hls::stream<int>& sum,  int pointNumber, int nOctaves, int nOctaveLayers, float hessianThreshold)
 {
-	static const int SAMPLE_STEP = 1;
+	static const int SAMPLE_STEP = 0;
 
 	hls::stream<float> dets[nTotalLayers];		// 每一层图像 对应的 Hessian行列式的值
 	hls::stream<float> traces[nTotalLayers];	// 每一层图像 对应的 Hessian矩阵的迹的值
@@ -585,9 +592,9 @@ void SURF::HessianDetector(hls::stream<int>& sum,  int pointNumber, int nOctaves
 
 		for (int layer = 0; layer < nOctaveLayers + 2; layer++)
 		{
-
-			static int dr = (sumRow - 1) / step;
-			static int dc = (sumCol - 1) / step;
+//
+//			static int dr = (sumRow - 1) / step;
+//			static int dc = (sumCol - 1) / step;
 
 //			detCols[index] = dc;
 			sizes[index] = ((2 << octave) * (layer + 1) + 1) * 3;
@@ -603,11 +610,11 @@ void SURF::HessianDetector(hls::stream<int>& sum,  int pointNumber, int nOctaves
 			}
 
 #ifdef DEBUG
-			fout_size_sampleSteps << sizes[index] <<" "<< sampleSteps[index] << std::endl;
+			fout_size_sampleSteps << sizes[index] <<" "<< ((int)1 << sampleSteps[index]) << std::endl;
 #endif
 			index++;
 		}
-		step <<= 1;
+		step += 1;
 	}
 
 	calcLayerDetAndTrace(
