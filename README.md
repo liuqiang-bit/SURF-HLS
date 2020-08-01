@@ -9,10 +9,6 @@
 
 #### 1，文件说明
 
-**images**目录为空
-
-**ExecutableFiles**目录为空
-
 **Sourcecode\common\images**文件夹里的**1.png**为测试用的图片
 
 **Sourcecode\source**文件夹下为HLS源文件，
