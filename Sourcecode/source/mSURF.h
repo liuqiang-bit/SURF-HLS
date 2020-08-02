@@ -83,9 +83,10 @@ public:
 			hls::stream<float>& det8,
 			hls::stream<float>& trace,
 			float hessianThreshold,
+			hls::stream<KeyPoint>& keyPoints,
 			int pointNumber);
 
-	void HessianDetector(hls::stream<int>& sum, int pointNumber, int nOctaves, int nOctaveLayers, float hessianThreshold);
+	void HessianDetector(hls::stream<int>& sum, hls::stream<KeyPoint>& keyPoints, int pointNumber, int nOctaves, int nOctaveLayers, float hessianThreshold);
 };
 
 

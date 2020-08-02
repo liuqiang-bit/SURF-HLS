@@ -24,3 +24,5 @@ set_directive_pipeline "SURF::calcHaarPattern"
 set_directive_resource -core RAM_2P_LUTRAM "SURF::findCharacteristicPoint" N1
 set_directive_resource -core RAM_2P_LUTRAM "SURF::findCharacteristicPoint" N2
 set_directive_resource -core RAM_2P_LUTRAM "SURF::findCharacteristicPoint" N3
+set_directive_pipeline "SURF::calcLayerDetAndTrace/calcLayerDetAndTrace_layer"
+set_directive_pipeline "SURF::findCharacteristicPoint/findCharacteristicPoint_c0"
