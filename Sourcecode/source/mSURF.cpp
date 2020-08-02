@@ -3,7 +3,7 @@
 #include "hls_math.h"
 
 using namespace my;
-#define DEBUG
+//#define DEBUG
 #ifdef DEBUG
 #include <fstream>
 #endif
@@ -553,9 +553,9 @@ void SURF::findCharacteristicPoint(
 
 						if(val0 > hessianThreshold)
 						{
-//#ifdef DEBUG
-//							fout_val0 << val0 << std::endl;
-//#endif
+#ifdef DEBUG
+							fout_val0 << val0 << std::endl;
+#endif
 							switch (ly) {
 								case 0:
 								{
