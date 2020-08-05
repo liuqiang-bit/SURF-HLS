@@ -44,9 +44,9 @@ public:
 
 	SURF();
 
-	void createHessianBox(const ap_int<5> box[4][5], SurfHB dst[4], int n, int oldSize, int newSize, int cols);
+	void createHessianBox(const int box[4][5], SurfHB dst[4], int n, int oldSize, int newSize, int cols);
 
-	float calcHaarPattern(int sumBuf[sumBufRow][sumCol], SurfHB box[4], int n, ap_uint< sumBufRow << 3 > sumBufIndex, int cOffset);
+	float calcHaarPattern(int sumBuf[sumBufRow][sumCol], SurfHB box[4], int n, ap_uint< sumBufRow << 3 > sumBufIndex, int rOffset, int cOffset);
 
 	//bool interpolateKeypoint(float N[][9], int dx, int dy, int ds, my::KeyPoint& kpt);
 
@@ -84,9 +84,9 @@ public:
 			hls::stream<float>& trace,
 			float hessianThreshold,
 			hls::stream<KeyPoint>& keyPoints,
-			int pointNumber);
+			int& pointNumber);
 
-	void HessianDetector(hls::stream<int>& sum, hls::stream<KeyPoint>& keyPoints, int pointNumber, int nOctaves, int nOctaveLayers, float hessianThreshold);
+	void HessianDetector(hls::stream<int>& sum, hls::stream<KeyPoint>& keyPoints, int& pointNumber, int nOctaves, int nOctaveLayers, float hessianThreshold);
 };
 
 

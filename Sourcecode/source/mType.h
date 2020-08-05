@@ -19,7 +19,7 @@ typedef hls::Scalar<3, unsigned char>                 PIXEL_C3;
 typedef hls::Mat<MAX_HEIGHT, MAX_WIDTH, HLS_8UC3>     IMAGE_C3;
 
 typedef struct{
-	ap_uint<10> y, x;
+	int y, x;
 }KeyPoint;
 
 #endif

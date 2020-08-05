@@ -15,11 +15,11 @@ void consume(hls::stream<T>& S, int row, int col)
 	}
 }
 
-void top(AXI_STREAM_24& video_in){
+void top(AXI_STREAM_24& video_in, hls::stream<KeyPoint>& keyPoints){
 #pragma HLS INTERFACE axis register both port=video_in
 
 #pragma HLS DATAFLOW
-	hls::stream<KeyPoint> points;
+	//hls::stream<KeyPoint> points;
 	my::SURF surf;
 	int pointNumber = 0;
 	static hls::stream<int> sum;
@@ -28,10 +28,9 @@ void top(AXI_STREAM_24& video_in){
 
 //	consume(sum, sumRow, sumCol);
 
-
 //	/*¼ì²âÌØÕ÷µã*/
-	surf.HessianDetector(sum, points, pointNumber, 3, 1, 10000/*33000*/);
-	//consume(points, 1, 807);
+	surf.HessianDetector(sum, keyPoints, pointNumber, 3, 1, 10000);
+	//consume(points, 1, 471);
 }
 
 

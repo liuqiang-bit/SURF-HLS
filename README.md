@@ -1,6 +1,4 @@
 # SURF-HLS
-2020年新⼯科联盟-Xilinx暑期学校（Summer School）项⽬
-
 ## 使用HLS实现SURF算法
 
 ### 一，项目介绍
@@ -9,7 +7,7 @@
 
 #### 1，文件说明
 
-**Sourcecode\common\images**文件夹里的**1.png**为测试用的图片
+**Sourcecode\common\images**文件夹里的**1.png**为测试用的图片，**keyPoint.png**为绘制的特征点
 
 **Sourcecode\source**文件夹下为HLS源文件，
 
