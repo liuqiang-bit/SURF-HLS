@@ -7,7 +7,7 @@
 
 #### 1，文件说明
 
-**Sourcecode\common\images**文件夹里的**1.png**为测试用的图片，**keyPoint.png**为绘制的特征点
+**Sourcecode\common\images**文件夹里的**1.png**为测试用的图片
 
 **Sourcecode\source**文件夹下为HLS源文件，
 
@@ -23,7 +23,7 @@
 
 ​		**det0.txt**~**det8.txt**为hessian模板遍历积分图的输出数据
 
-​		**keyPoint.txt**为检测到的特征点在原图中的坐标
+​		**keyPoint.png**为绘制的特征点
 
 #### 2，项目目录
 

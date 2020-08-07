@@ -22,17 +22,20 @@ int main(int argc, char** argv)
 	top(src_axi, keyPoints);
 
 	cv::KeyPoint point;
-	std::vector<cv::KeyPoint> points;
+	std::vector<cv::KeyPoint> points[3];
 
-	for(int i = 0; i < 2000/*471*/; i++)
+	for(int i = 0; i < 600/*471*/; i++)
 	{
 		keyPoints >> keyPoint;
 		point.pt.y = keyPoint.y;
 		point.pt.x = keyPoint.x;
-		points.push_back(point);
+		point.octave = keyPoint.octave;
+		points[point.octave].push_back(point);
 	}
-	cv::drawKeypoints(src, points, kPImage, cv::Scalar(0, 0, 255), 0);
-	cv::imwrite("C:/Users/GUDONG/Desktop/HLS_SURF/common/images/keyPoint.png", kPImage);
+	cv::drawKeypoints(src, points[0], kPImage, cv::Scalar(0, 0, 255), 0);
+	cv::drawKeypoints(kPImage, points[1], kPImage, cv::Scalar(0, 255, 0), 0);
+	cv::drawKeypoints(kPImage, points[2], kPImage, cv::Scalar(255, 0, 0), 0);
+	cv::imwrite("C:/Users/GUDONG/Desktop/HLS_SURF/common/OutputFile/keyPoint.png", kPImage);
 	std::cout << "done";
 
 	return 0;

@@ -34,14 +34,16 @@ std::ofstream fout_det6Index("C:/Users/GUDONG/Desktop/HLS_SURF/common/OutputFile
 std::ofstream fout_det7Index("C:/Users/GUDONG/Desktop/HLS_SURF/common/OutputFile/det7Index.txt");
 std::ofstream fout_det8Index("C:/Users/GUDONG/Desktop/HLS_SURF/common/OutputFile/det8Index.txt");
 std::ofstream fout_sum2buf("C:/Users/GUDONG/Desktop/HLS_SURF/common/OutputFile/sum2buf.txt");
+std::ofstream fout_sumBuf("C:/Users/GUDONG/Desktop/HLS_SURF/common/OutputFile/sumBuf.txt");
 std::ofstream fout_rIndex("C:/Users/GUDONG/Desktop/HLS_SURF/common/OutputFile/rIndex.txt");
 std::ofstream fout_NIndex("C:/Users/GUDONG/Desktop/HLS_SURF/common/OutputFile/NIndex.txt");
 std::ofstream fout_val0("C:/Users/GUDONG/Desktop/HLS_SURF/common/OutputFile/val0.txt");
 std::ofstream fout_keyPoint("C:/Users/GUDONG/Desktop/HLS_SURF/common/OutputFile/keyPoint.txt");
+std::ofstream fout_rOffset("C:/Users/GUDONG/Desktop/HLS_SURF/common/OutputFile/rOffset.txt");
 #endif
 
-static const int detRow[nTotalLayers] = {559, 553, 547, 277, 271, 265, 135, 129, 123};
-static const int detCol[nTotalLayers] = {858, 852, 846, 426, 420, 414, 210, 204, 198};
+static const int detRow[nTotalLayers] = {557, 551, 545, 276, 270, 264, 135, 129, 123};
+static const int detCol[nTotalLayers] = {856, 850, 844, 425, 419, 413, 210, 204, 198};
 
 static int margin = 3;
 
@@ -113,10 +115,10 @@ float SURF::calcHaarPattern(int sumBuf[sumBufRow][sumCol], SurfHB box[4], int n,
 	calcHaarPattern_kn:for(int kn = 0; kn < n; kn++)
 	{
 		d += (
-			 sumBuf[sumBufIndex.range(((box[kn].y2 + 1 + rOffset) << 3) - 1, ((box[kn].y2 + 1 + rOffset) << 3) - 8)][box[kn].x2 + cOffset]
-			-sumBuf[sumBufIndex.range(((box[kn].y2 + 1 + rOffset) << 3) - 1, ((box[kn].y2 + 1 + rOffset) << 3) - 8)][box[kn].x1 + cOffset]
-			-sumBuf[sumBufIndex.range(((box[kn].y1 + 1 + rOffset) << 3) - 1, ((box[kn].y1 + 1 + rOffset) << 3) - 8)][box[kn].x2 + cOffset]
-			+sumBuf[sumBufIndex.range(((box[kn].y1 + 1 + rOffset) << 3) - 1, ((box[kn].y1 + 1 + rOffset) << 3) - 8)][box[kn].x1 + cOffset]
+			 sumBuf[sumBufIndex.range(((box[kn].y2 + 1 + rOffset) << 3) - 1, (box[kn].y2 + rOffset) << 3)][box[kn].x2 + cOffset]
+			-sumBuf[sumBufIndex.range(((box[kn].y2 + 1 + rOffset) << 3) - 1, (box[kn].y2 + rOffset) << 3)][box[kn].x1 + cOffset]
+			-sumBuf[sumBufIndex.range(((box[kn].y1 + 1 + rOffset) << 3) - 1, (box[kn].y1 + rOffset) << 3)][box[kn].x2 + cOffset]
+			+sumBuf[sumBufIndex.range(((box[kn].y1 + 1 + rOffset) << 3) - 1, (box[kn].y1 + rOffset) << 3)][box[kn].x1 + cOffset]
 			 ) * box[kn].n;
 	}
 	return d;
@@ -181,6 +183,7 @@ void SURF::calcLayerDetAndTrace(
 		createHessianBox(dxy_s, Dxy[i], NXY, 9, size[i], sumCol);
 	}
 
+	/*9层模板共用一个缓存数组，缓存数组的行数为最大模板的尺寸*/
 	static int sumBuf[sumBufRow][sumCol];
 	ap_uint< sumBufRow << 3 > sumBufIndex;
 	static ap_uint<sumBufRow << 3> MSB = 0;
@@ -228,31 +231,31 @@ void SURF::calcLayerDetAndTrace(
 			sum >> sumBuf[rIndex][c];
 
 			/*所有尺寸的模板遍历积分图*/
-			for(int k = 0; k < nTotalLayers; k++)
+			calcLayerDetAndTrace_layer:for(int k = 0; k < nTotalLayers; k++)
 			{
-
 				/*考虑此模板的采样步长*/
 				if((r & (((int)1 << sampleStep[k]) - 1)) == 0 && (c & (((int)1 << sampleStep[k]) - 1)) == 0)
 				{
-					int cOffset = c - (size[k] - 1);
+					int cOffset = c - (size[k]);
 
-					if(r >= size[k] - 1 && cOffset >= 0)
+					if(r > size[k] && cOffset > 0)
 					{
-						static int rOffset = 0;
+						int rOffset = 0;
 						if(r < sumBufRow)
 						{
 							rOffset = r - size[k];
 						}
 						else{
-							rOffset = sumBufRow - size[k] - 1;
+							rOffset = (sumBufRow - size[k]) - 1;
 						}
+
 #ifdef DEBUG
-						static std::ofstream fout_sumBuf("C:/Users/GUDONG/Desktop/HLS_SURF/common/OutputFile/sumBuf.txt");
 						if(k == 0 && c == sumCol - 1)
 						{
-							for(int kr = 0; kr < size[k]; kr++)
+							fout_rOffset << rOffset << std::endl;
+							for(int kr = 0; kr <= size[k]; kr++)
 							{
-								for(int kc = 0; kc < sumCol; kc++)
+								for(int kc = 1; kc < sumCol; kc++)
 								{
 									fout_sumBuf << sumBuf[sumBufIndex.range(((kr + 1 + rOffset) << 3) - 1, (kr + rOffset) << 3)][kc] << " ";
 								}
@@ -408,8 +411,8 @@ void SURF::findCharacteristicPoint(
 
 	static int detT[9] = {0};
 	static KeyPoint point;
-	static float N1[3][3][858];
-	static float N2[3][3][426];
+	static float N1[3][3][856];
+	static float N2[3][3][425];
 	static float N3[3][3][210];
 
 	/*特征点在原图中的坐标*/
@@ -585,7 +588,9 @@ void SURF::findCharacteristicPoint(
 										/*将坐标转换到原图像中的坐标*/
 										point.y = (r << sampleStep[midIndex]) + iSOffset;
 										point.x = (c << sampleStep[midIndex]) + iSOffset;
+										point.octave = 0;
 										keyPoints << point;
+
 #ifdef DEBUG
 										fout_keyPoint << "(" << point.y << "," << point.x << ")" << std::endl;
 #endif
@@ -608,6 +613,7 @@ void SURF::findCharacteristicPoint(
 									{
 										point.y = (r << sampleStep[midIndex]) + iSOffset;
 										point.x = (c << sampleStep[midIndex]) + iSOffset;
+										point.octave = 1;
 										keyPoints << point;
 #ifdef DEBUG
 										fout_keyPoint << "(" << point.y << "," << point.x << ")" << std::endl;
@@ -631,6 +637,7 @@ void SURF::findCharacteristicPoint(
 									{
 										point.y = (r << sampleStep[midIndex]) + iSOffset;
 										point.x = (c << sampleStep[midIndex]) + iSOffset;
+										point.octave = 2;
 										keyPoints << point;
 #ifdef DEBUG
 										fout_keyPoint << "(" << point.y << "," << point.x << ")" << std::endl;
@@ -786,6 +793,8 @@ void SURF::HessianDetector(hls::stream<int>& sum,  hls::stream<KeyPoint>& keyPoi
 	}
 
 #endif
+
+#ifndef DEBUG
 	findCharacteristicPoint(
 			sizes,
 			sampleSteps,
@@ -803,5 +812,6 @@ void SURF::HessianDetector(hls::stream<int>& sum,  hls::stream<KeyPoint>& keyPoi
 			hessianThreshold,
 			keyPoints,
 			pointNumber);
+#endif
 
 }
