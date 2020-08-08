@@ -3,7 +3,7 @@
 #include "hls_math.h"
 
 using namespace my;
-
+//#define DEBUG
 #ifdef DEBUG
 #include <fstream>
 #endif
@@ -332,30 +332,39 @@ void SURF::calcLayerDetAndTrace(
 #ifdef DEBUG
 						switch (k) {
 						case 0:
+							fout_det0 << dt <<" ";
 							fout_det0Index <<"(" << r << "," << c << ") ";
 							break;
 						case 1:
+							fout_det1 << dt <<" ";
 							fout_det1Index <<"(" << r << "," << c << ") ";
 							break;
 						case 2:
+							fout_det2 << dt <<" ";
 							fout_det2Index <<"(" << r << "," << c << ") ";
 							break;
 						case 3:
+							fout_det3 << dt <<" ";
 							fout_det3Index <<"(" << r << "," << c << ") ";
 							break;
 						case 4:
+							fout_det4 << dt <<" ";
 							fout_det4Index <<"(" << r << "," << c << ") ";
 							break;
 						case 5:
+							fout_det5 << dt <<" ";
 							fout_det5Index <<"(" << r << "," << c << ") ";
 							break;
 						case 6:
+							fout_det6 << dt <<" ";
 							fout_det6Index <<"(" << r << "," << c << ") ";
 							break;
 						case 7:
+							fout_det7 << dt <<" ";
 							fout_det7Index <<"(" << r << "," << c << ") ";
 							break;
 						case 8:
+							fout_det8 << dt <<" ";
 							fout_det8Index <<"(" << r << "," << c << ") ";
 							break;
 						default:
@@ -368,7 +377,15 @@ void SURF::calcLayerDetAndTrace(
 		}
 #ifdef DEBUG
 		fout_sum2buf << std::endl;
-
+		fout_det0 << std::endl;
+		fout_det1 << std::endl;
+		fout_det2 << std::endl;
+		fout_det3 << std::endl;
+		fout_det4 << std::endl;
+		fout_det5 << std::endl;
+		fout_det6 << std::endl;
+		fout_det7 << std::endl;
+		fout_det8 << std::endl;
 		fout_det0Index << std::endl;
 		fout_det1Index << std::endl;
 		fout_det2Index << std::endl;
@@ -418,7 +435,7 @@ void SURF::findCharacteristicPoint(
 	/*特征点在原图中的坐标*/
 	static int center_r = 0;
 	static int center_c = 0;
-	int rIndex = 0;
+
 
 	static ap_uint<2> bRow[3] = {0};
 	static int midIndex = 0;
@@ -426,7 +443,10 @@ void SURF::findCharacteristicPoint(
 	static int iSOffset = 0;
 	findCharacteristicPoint_layer:for(int ly = 0; ly < nMiddleLayers; ly++)
 	{
-		ap_uint<6>RowIndex = 0x24;
+		/*必须在每层模板都初始化rIndex，否则切换到其它层时rIndex可能不是从0开始*/
+		int rIndex = -1;
+
+		ap_uint<6>RowIndex = 0;
 		static ap_uint<6> MSB = 0;
 
 #ifdef DEBUG
@@ -444,19 +464,26 @@ void SURF::findCharacteristicPoint(
 
 		findCharacteristicPoint_r0:for(int r = 0; r < detRow[midIndex - 1]; r++)
 			{
-				rIndex = r % 3;
-//			if(rIndex < 3)
-//			{
-//				rIndex++;
-//			}
-//			else{
-//				rIndex = 0;
-//			}
+			if(rIndex < 3 - 1)
+			{
+				rIndex++;
+			}
+			else{
+				rIndex = 0;
+			}
+
 #ifdef DEBUG
 				fout_NIndex << "将第" << r <<"行写入N的第" << rIndex << "行"<< std::endl;
 #endif
-				MSB.range(5,4) = RowIndex.range(1,0);
-				RowIndex = (RowIndex >> 2) | MSB;
+
+				if(r < 3){
+					RowIndex.range(((r + 1) << 1) - 1, r << 1) = r;
+				}
+				else{
+					MSB.range(5,4) = RowIndex.range(1,0);
+					RowIndex = (RowIndex >> 2) | MSB;
+				}
+
 #ifdef DEBUG
 		for(int Nr = 0; Nr < 3; Nr++)
 		{
@@ -717,84 +744,83 @@ void SURF::HessianDetector(hls::stream<int>& sum,  hls::stream<KeyPoint>& keyPoi
 			dets[7],
 			dets[8],
 			traces[0]);
-#ifdef DEBUG
-	for(int k = 0; k < nTotalLayers; k++)
-	{
-		for(int dr = 0; dr < detRow[k]; dr++)
-		{
-			for(int dc = 0; dc < detCol[k]; dc++)
-			{
-				float s = 0;
-				dets[k] >> s;
-				switch (k) {
-				case 0:
-					fout_det0 << s <<" ";
-					break;
-				case 1:
-					fout_det1 << s <<" ";
-					break;
-				case 2:
-					fout_det2 << s <<" ";
-					break;
-				case 3:
-					fout_det3 << s <<" ";
-					break;
-				case 4:
-					fout_det4 << s <<" ";
-					break;
-				case 5:
-					fout_det5 << s <<" ";
-					break;
-				case 6:
-					fout_det6 << s <<" ";
-					break;
-				case 7:
-					fout_det7 << s <<" ";
-					break;
-				case 8:
-					fout_det8 << s <<" ";
-					break;
-				default:
-					break;
-				}
-			}
-			switch (k) {
-			case 0:
-				fout_det0 << std::endl;
-				break;
-			case 1:
-				fout_det1 << std::endl;
-				break;
-			case 2:
-				fout_det2 << std::endl;
-				break;
-			case 3:
-				fout_det3 << std::endl;
-				break;
-			case 4:
-				fout_det4 << std::endl;
-				break;
-			case 5:
-				fout_det5 << std::endl;
-				break;
-			case 6:
-				fout_det6 << std::endl;
-				break;
-			case 7:
-				fout_det7 << std::endl;
-				break;
-			case 8:
-				fout_det8 << std::endl;
-				break;
-			default:
-				break;
-			}
-		}
-	}
+//#ifdef DEBUG
+//	for(int k = 0; k < nTotalLayers; k++)
+//	{
+//		for(int dr = 0; dr < detRow[k]; dr++)
+//		{
+//			for(int dc = 0; dc < detCol[k]; dc++)
+//			{
+//				float s = 0;
+//				dets[k] >> s;
+//				switch (k) {
+//				case 0:
+//					fout_det0 << s <<" ";
+//					break;
+//				case 1:
+//					fout_det1 << s <<" ";
+//					break;
+//				case 2:
+//					fout_det2 << s <<" ";
+//					break;
+//				case 3:
+//					fout_det3 << s <<" ";
+//					break;
+//				case 4:
+//					fout_det4 << s <<" ";
+//					break;
+//				case 5:
+//					fout_det5 << s <<" ";
+//					break;
+//				case 6:
+//					fout_det6 << s <<" ";
+//					break;
+//				case 7:
+//					fout_det7 << s <<" ";
+//					break;
+//				case 8:
+//					fout_det8 << s <<" ";
+//					break;
+//				default:
+//					break;
+//				}
+//			}
+//			switch (k) {
+//			case 0:
+//				fout_det0 << std::endl;
+//				break;
+//			case 1:
+//				fout_det1 << std::endl;
+//				break;
+//			case 2:
+//				fout_det2 << std::endl;
+//				break;
+//			case 3:
+//				fout_det3 << std::endl;
+//				break;
+//			case 4:
+//				fout_det4 << std::endl;
+//				break;
+//			case 5:
+//				fout_det5 << std::endl;
+//				break;
+//			case 6:
+//				fout_det6 << std::endl;
+//				break;
+//			case 7:
+//				fout_det7 << std::endl;
+//				break;
+//			case 8:
+//				fout_det8 << std::endl;
+//				break;
+//			default:
+//				break;
+//			}
+//		}
+//	}
+//
+//#endif
 
-#endif
-
-#ifndef DEBUG
 	findCharacteristicPoint(
 			sizes,
 			sampleSteps,
@@ -812,6 +838,5 @@ void SURF::HessianDetector(hls::stream<int>& sum,  hls::stream<KeyPoint>& keyPoi
 			hessianThreshold,
 			keyPoints,
 			pointNumber);
-#endif
 
 }
