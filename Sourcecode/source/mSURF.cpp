@@ -108,11 +108,11 @@ void SURF::integralImg(AXI_STREAM_24& video_in, hls::stream<int>& dst)
 	}
 }
 
-float SURF::calcHaarPattern(int sumBuf[sumBufRow][sumCol], SurfHB box[4], int n, ap_uint< sumBufRow << 3 > sumBufIndex, int rOffset, int cOffset)
+float SURF::calcHaarPattern_x_y(int sumBuf[sumBufRow][sumCol], SurfHB box[4], ap_uint< sumBufRow << 3 > sumBufIndex, int rOffset, int cOffset)
 {
 
 	float d = 0;
-	calcHaarPattern_kn:for(int kn = 0; kn < n; kn++)
+	calcHaarPattern_kn:for(int kn = 0; kn < 3; kn++)
 	{
 		d += (
 			 sumBuf[sumBufIndex.range(((box[kn].y2 + 1 + rOffset) << 3) - 1, (box[kn].y2 + rOffset) << 3)][box[kn].x2 + cOffset]
@@ -124,6 +124,21 @@ float SURF::calcHaarPattern(int sumBuf[sumBufRow][sumCol], SurfHB box[4], int n,
 	return d;
 }
 
+float SURF::calcHaarPattern_xy(int sumBuf[sumBufRow][sumCol], SurfHB box[4], ap_uint< sumBufRow << 3 > sumBufIndex, int rOffset, int cOffset)
+{
+
+	float d = 0;
+	calcHaarPattern_kn:for(int kn = 0; kn < 4; kn++)
+	{
+		d += (
+			 sumBuf[sumBufIndex.range(((box[kn].y2 + 1 + rOffset) << 3) - 1, (box[kn].y2 + rOffset) << 3)][box[kn].x2 + cOffset]
+			-sumBuf[sumBufIndex.range(((box[kn].y2 + 1 + rOffset) << 3) - 1, (box[kn].y2 + rOffset) << 3)][box[kn].x1 + cOffset]
+			-sumBuf[sumBufIndex.range(((box[kn].y1 + 1 + rOffset) << 3) - 1, (box[kn].y1 + rOffset) << 3)][box[kn].x2 + cOffset]
+			+sumBuf[sumBufIndex.range(((box[kn].y1 + 1 + rOffset) << 3) - 1, (box[kn].y1 + rOffset) << 3)][box[kn].x1 + cOffset]
+			 ) * box[kn].n;
+	}
+	return d;
+}
 void SURF::createHessianBox(const int box[4][5], SurfHB dst[4], int n, int oldSize, int newSize, int cols)
 {
 	float ratio = (float)newSize / oldSize;
@@ -147,8 +162,8 @@ void SURF::createHessianBox(const int box[4][5], SurfHB dst[4], int n, int oldSi
 
 void SURF::calcLayerDetAndTrace(
 		hls::stream<int>& sum,
-		int size[nTotalLayers],
-		int sampleStep[nTotalLayers],
+//		int size[nTotalLayers],
+//		int sampleStep[nTotalLayers],
 		hls::stream<float>& det0,
 		hls::stream<float>& det1,
 		hls::stream<float>& det2,
@@ -161,6 +176,8 @@ void SURF::calcLayerDetAndTrace(
 		hls::stream<float>& trace)
 {
 
+	static int sizes[nTotalLayers] = {9, 15, 21, 15, 27, 39, 27, 51, 75};						// 每一层用的 Harr模板的大小
+	static int sampleSteps[nTotalLayers] = {0, 0, 0, 1, 1, 1, 2, 2, 2};							// 每一层用的采样步长是2的sampleSteps[nTotalLayers]次幂
 	static int detT[nTotalLayers] = {0};
 	static int sample_r[nTotalLayers];
 	static int sample_c[nTotalLayers];
@@ -178,10 +195,126 @@ void SURF::calcLayerDetAndTrace(
 	calcLayerDetAndTrace_hessian:for(int i = 0; i < nTotalLayers; i++)
 	{
 		/*有优化空间，目前及其耗费FF和LUT,可考虑去掉此步骤，直接调用生成好的hessianBox*/
-		createHessianBox(dx_s, Dx[i], NX, 9, size[i], sumCol);
-		createHessianBox(dy_s, Dy[i], NY, 9, size[i], sumCol);
-		createHessianBox(dxy_s, Dxy[i], NXY, 9, size[i], sumCol);
+		createHessianBox(dx_s, Dx[i], NX, 9, sizes[i], sumCol);
+		createHessianBox(dy_s, Dy[i], NY, 9, sizes[i], sumCol);
+		createHessianBox(dxy_s, Dxy[i], NXY, 9, sizes[i], sumCol);
 	}
+//	Dx[0][0].x1 = 0; Dx[0][0].y1 = 2; Dx[0][0].x2 = 3; Dx[0][0].y2 = 7; Dx[0][0].n = 0.0666667;
+//	Dx[0][1].x1 = 3; Dx[0][1].y1 = 2; Dx[0][1].x2 = 6; Dx[0][1].y2 = 7; Dx[0][1].n = -0.133333;
+//	Dx[0][2].x1 = 6; Dx[0][2].y1 = 2; Dx[0][2].x2 = 9; Dx[0][2].y2 = 7; Dx[0][2].n = 0.0666667;
+//
+//	Dy[0][0].x1 = 2; Dy[0][0].y1 = 0; Dy[0][0].x2 = 7; Dy[0][0].y2 = 3; Dy[0][0].n = 0.0666667;
+//	Dy[0][1].x1 = 2; Dy[0][1].y1 = 3; Dy[0][1].x2 = 7; Dy[0][1].y2 = 6; Dy[0][1].n = -0.133333;
+//	Dy[0][2].x1 = 2; Dy[0][2].y1 = 6; Dy[0][2].x2 = 7; Dy[0][2].y2 = 9; Dy[0][2].n = 0.0666667;
+//
+//	Dxy[0][0].x1 = 1; Dxy[0][0].y1 = 1; Dxy[0][0].x2 = 4; Dxy[0][0].y2 = 4; Dxy[0][0].n = 0.111111;
+//	Dxy[0][1].x1 = 5; Dxy[0][1].y1 = 1; Dxy[0][1].x2 = 8; Dxy[0][1].y2 = 4; Dxy[0][1].n = -0.111111;
+//	Dxy[0][2].x1 = 1; Dxy[0][2].y1 = 5; Dxy[0][2].x2 = 4; Dxy[0][2].y2 = 8; Dxy[0][2].n = -0.111111;
+//	Dxy[0][3].x1 = 5; Dxy[0][3].y1 = 5; Dxy[0][3].x2 = 8; Dxy[0][3].y2 = 8; Dxy[0][3].n = 0.111111;
+//
+//	Dx[1][0].x1 = 0;  Dx[1][0].y1 = 3; Dx[1][0].x2 = 5; Dx[1][0].y2 = 12; Dx[1][0].n = 0.0222222;
+//	Dx[1][1].x1 = 5;  Dx[1][1].y1 = 3; Dx[1][1].x2 = 10; Dx[1][1].y2 = 12; Dx[1][1].n = -0.0444444;
+//	Dx[1][2].x1 = 10; Dx[1][2].y1 = 3; Dx[1][2].x2 = 15; Dx[1][2].y2 = 12; Dx[1][2].n = 0.0222222;
+//
+//	Dy[1][0].x1 = 3; Dy[1][0].y1 = 0; Dy[1][0].x2 = 12; Dy[1][0].y2 = 5; Dy[1][0].n = 0.0222222;
+//	Dy[1][1].x1 = 3; Dy[1][1].y1 = 5; Dy[1][1].x2 = 12; Dy[1][1].y2 = 10; Dy[1][1].n = -0.0444444;
+//	Dy[1][2].x1 = 3; Dy[1][2].y1 = 10; Dy[1][2].x2 = 12; Dy[1][2].y2 = 15; Dy[1][2].n = 0.0222222;
+//
+//	Dxy[1][0].x1 = 2; Dxy[1][0].y1 = 2; Dxy[1][0].x2 = 7; Dxy[1][0].y2 = 7; Dxy[1][0].n = 0.04;
+//	Dxy[1][1].x1 = 8; Dxy[1][1].y1 = 2; Dxy[1][1].x2 = 13; Dxy[1][1].y2 = 7; Dxy[1][1].n = -0.04;
+//	Dxy[1][2].x1 = 2; Dxy[1][2].y1 = 8; Dxy[1][2].x2 = 7; Dxy[1][2].y2 = 13; Dxy[1][2].n = -0.04;
+//	Dxy[1][3].x1 = 8; Dxy[1][3].y1 = 8; Dxy[1][3].x2 = 13; Dxy[1][3].y2 = 13; Dxy[1][3].n = 0.04;
+//
+//	Dx[2][0].x1 = 0;  Dx[2][0].y1 = 5; Dx[2][0].x2 = 7;  Dx[2][0].y2 = 16; Dx[2][0].n = 0.012987;
+//	Dx[2][1].x1 = 7;  Dx[2][1].y1 = 5; Dx[2][1].x2 = 14; Dx[2][1].y2 = 16; Dx[2][1].n = -0.025974;
+//	Dx[2][2].x1 = 14; Dx[2][2].y1 = 5; Dx[2][2].x2 = 21; Dx[2][2].y2 = 16; Dx[2][2].n = 0.012987;
+//
+//	Dy[2][0].x1 = 5; Dy[2][0].y1 = 0;  Dy[2][0].x2 = 16; Dy[2][0].y2 = 7; Dy[2][0].n = 0.012987;
+//	Dy[2][1].x1 = 5; Dy[2][1].y1 = 7;  Dy[2][1].x2 = 16; Dy[2][1].y2 = 14; Dy[2][1].n = -0.025974;
+//	Dy[2][2].x1 = 5; Dy[2][2].y1 = 14; Dy[2][2].x2 = 16; Dy[2][2].y2 = 21; Dy[2][2].n = 0.012987;
+//
+//	Dxy[2][0].x1 = 2;  Dxy[2][0].y1 = 2;  Dxy[2][0].x2 = 9;  Dxy[2][0].y2 = 9;  Dxy[2][0].n = 0.0204082;
+//	Dxy[2][1].x1 = 12; Dxy[2][1].y1 = 2;  Dxy[2][1].x2 = 19; Dxy[2][1].y2 = 9;  Dxy[2][1].n = -0.0204082;
+//	Dxy[2][2].x1 = 2;  Dxy[2][2].y1 = 12; Dxy[2][2].x2 = 9;  Dxy[2][2].y2 = 19; Dxy[2][2].n = -0.0204082;
+//	Dxy[2][3].x1 = 12; Dxy[2][3].y1 = 12; Dxy[2][3].x2 = 19; Dxy[2][3].y2 = 19; Dxy[2][3].n = 0.0204082;
+//
+//	Dx[3][0].x1 = 0;  Dx[3][0].y1 = 3; Dx[3][0].x2 = 5;  Dx[3][0].y2 = 12; Dx[3][0].n = 0.0222222;
+//	Dx[3][1].x1 = 5;  Dx[3][1].y1 = 3; Dx[3][1].x2 = 10; Dx[3][1].y2 = 12; Dx[3][1].n = -0.0444444;
+//	Dx[3][2].x1 = 10; Dx[3][2].y1 = 3; Dx[3][2].x2 = 15; Dx[3][2].y2 = 12; Dx[3][2].n = 0.0222222;
+//
+//	Dy[3][0].x1 = 3; Dy[3][0].y1 = 0;  Dy[3][0].x2 = 12; Dy[3][0].y2 = 5; Dy[3][0].n = 0.0222222;
+//	Dy[3][1].x1 = 3; Dy[3][1].y1 = 5;  Dy[3][1].x2 = 12; Dy[3][1].y2 = 10; Dy[3][1].n = -0.0444444;
+//	Dy[3][2].x1 = 3; Dy[3][2].y1 = 10; Dy[3][2].x2 = 12; Dy[3][2].y2 = 15; Dy[3][2].n = 0.0222222;
+//
+//	Dxy[3][0].x1 = 2; Dxy[3][0].y1 = 2; Dxy[3][0].x2 = 7;  Dxy[3][0].y2 = 7;  Dxy[3][0].n = 0.04;
+//	Dxy[3][1].x1 = 8; Dxy[3][1].y1 = 2; Dxy[3][1].x2 = 13; Dxy[3][1].y2 = 7;  Dxy[3][1].n = -0.04;
+//	Dxy[3][2].x1 = 2; Dxy[3][2].y1 = 8; Dxy[3][2].x2 = 7;  Dxy[3][2].y2 = 13; Dxy[3][2].n = -0.04;
+//	Dxy[3][3].x1 = 8; Dxy[3][3].y1 = 8; Dxy[3][3].x2 = 13; Dxy[3][3].y2 = 13; Dxy[3][3].n = 0.04;
+//
+//	Dx[4][0].x1 = 0;  Dx[4][0].y1 = 6; Dx[4][0].x2 = 9;  Dx[4][0].y2 = 21; Dx[4][0].n = 0.00740741;
+//	Dx[4][1].x1 = 9;  Dx[4][1].y1 = 6; Dx[4][1].x2 = 18; Dx[4][1].y2 = 21; Dx[4][1].n = -0.0148148;
+//	Dx[4][2].x1 = 18; Dx[4][2].y1 = 6; Dx[4][2].x2 = 27; Dx[4][2].y2 = 21; Dx[4][2].n = 0.00740741;
+//
+//	Dy[4][0].x1 = 6; Dy[4][0].y1 = 0;  Dy[4][0].x2 = 21; Dy[4][0].y2 = 9;  Dy[4][0].n = 0.00740741;
+//	Dy[4][1].x1 = 6; Dy[4][1].y1 = 9;  Dy[4][1].x2 = 21; Dy[4][1].y2 = 18; Dy[4][1].n = -0.0148148;
+//	Dy[4][2].x1 = 6; Dy[4][2].y1 = 18; Dy[4][2].x2 = 21; Dy[4][2].y2 = 27; Dy[4][2].n = 0.00740741;
+//
+//	Dxy[4][0].x1 = 3;  Dxy[4][0].y1 = 3;  Dxy[4][0].x2 = 12; Dxy[4][0].y2 = 12; Dxy[4][0].n = 0.0123457;
+//	Dxy[4][1].x1 = 15; Dxy[4][1].y1 = 3;  Dxy[4][1].x2 = 24; Dxy[4][1].y2 = 12; Dxy[4][1].n = -0.0123457;
+//	Dxy[4][2].x1 = 3;  Dxy[4][2].y1 = 15; Dxy[4][2].x2 = 12; Dxy[4][2].y2 = 24; Dxy[4][2].n = -0.0123457;
+//	Dxy[4][3].x1 = 15; Dxy[4][3].y1 = 15; Dxy[4][3].x2 = 24; Dxy[4][3].y2 = 24; Dxy[4][3].n = 0.0123457;
+//
+//	Dx[5][0].x1 = 0;  Dx[5][0].y1 = 9; Dx[5][0].x2 = 13; Dx[5][0].y2 = 30; Dx[5][0].n = 0.003663;
+//	Dx[5][1].x1 = 13; Dx[5][1].y1 = 9; Dx[5][1].x2 = 26; Dx[5][1].y2 = 30; Dx[5][1].n = -0.00732601;
+//	Dx[5][2].x1 = 26; Dx[5][2].y1 = 9; Dx[5][2].x2 = 39; Dx[5][2].y2 = 30; Dx[5][2].n = 0.003663;
+//
+//	Dy[5][0].x1 = 9; Dy[5][0].y1 = 0;  Dy[5][0].x2 = 30; Dy[5][0].y2 = 13; Dy[5][0].n = 0.003663;
+//	Dy[5][1].x1 = 9; Dy[5][1].y1 = 13; Dy[5][1].x2 = 30; Dy[5][1].y2 = 26; Dy[5][1].n = -0.00732601;
+//	Dy[5][2].x1 = 9; Dy[5][2].y1 = 26; Dy[5][2].x2 = 30; Dy[5][2].y2 = 39; Dy[5][2].n = 0.003663;
+//
+//	Dxy[5][0].x1 = 4;  Dxy[5][0].y1 = 4;  Dxy[5][0].x2 = 17; Dxy[5][0].y2 = 17; Dxy[5][0].n = 0.00591716;
+//	Dxy[5][1].x1 = 22; Dxy[5][1].y1 = 4;  Dxy[5][1].x2 = 35; Dxy[5][1].y2 = 17; Dxy[5][1].n = -0.00591716;
+//	Dxy[5][2].x1 = 4;  Dxy[5][2].y1 = 22; Dxy[5][2].x2 = 17; Dxy[5][2].y2 = 35; Dxy[5][2].n = -0.00591716;
+//	Dxy[5][3].x1 = 22; Dxy[5][3].y1 = 22; Dxy[5][3].x2 = 35; Dxy[5][3].y2 = 35; Dxy[5][3].n = 0.00591716;
+//
+//	Dx[6][0].x1 = 0;  Dx[6][0].y1 = 6; Dx[6][0].x2 = 9;  Dx[6][0].y2 = 21; Dx[6][0].n = 0.00740741;
+//	Dx[6][1].x1 = 9;  Dx[6][1].y1 = 6; Dx[6][1].x2 = 18; Dx[6][1].y2 = 21; Dx[6][1].n = -0.0148148;
+//	Dx[6][2].x1 = 18; Dx[6][2].y1 = 6; Dx[6][2].x2 = 27; Dx[6][2].y2 = 21; Dx[6][2].n = 0.00740741;
+//
+//	Dy[6][0].x1 = 6; Dy[6][0].y1 = 0;  Dy[6][0].x2 = 21; Dy[6][0].y2 = 9;  Dy[6][0].n = 0.00740741;
+//	Dy[6][1].x1 = 6; Dy[6][1].y1 = 9;  Dy[6][1].x2 = 21; Dy[6][1].y2 = 18; Dy[6][1].n = -0.0148148;
+//	Dy[6][2].x1 = 6; Dy[6][2].y1 = 18; Dy[6][2].x2 = 21; Dy[6][2].y2 = 27; Dy[6][2].n = 0.00740741;
+//
+//	Dxy[6][0].x1 = 3;  Dxy[6][0].y1 = 3;  Dxy[6][0].x2 = 12; Dxy[6][0].y2 = 12; Dxy[6][0].n = 0.0123457;
+//	Dxy[6][1].x1 = 15; Dxy[6][1].y1 = 3;  Dxy[6][1].x2 = 24; Dxy[6][1].y2 = 12; Dxy[6][1].n = -0.0123457;
+//	Dxy[6][2].x1 = 3;  Dxy[6][2].y1 = 15; Dxy[6][2].x2 = 12; Dxy[6][2].y2 = 24; Dxy[6][2].n = -0.0123457;
+//	Dxy[6][3].x1 = 15; Dxy[6][3].y1 = 15; Dxy[6][3].x2 = 24; Dxy[6][3].y2 = 24; Dxy[6][3].n = 0.0123457;
+//
+//	Dx[7][0].x1 = 0;  Dx[7][0].y1 = 11; Dx[7][0].x2 = 17; Dx[7][0].y2 = 40; Dx[7][0].n = 0.0020284;
+//	Dx[7][1].x1 = 17; Dx[7][1].y1 = 11; Dx[7][1].x2 = 34; Dx[7][1].y2 = 40; Dx[7][1].n = -0.0040568;
+//	Dx[7][2].x1 = 34; Dx[7][2].y1 = 11; Dx[7][2].x2 = 51; Dx[7][2].y2 = 40; Dx[7][2].n = 0.0020284;
+//
+//	Dy[7][0].x1 = 11; Dy[7][0].y1 = 0;  Dy[7][0].x2 = 40; Dy[7][0].y2 = 17; Dy[7][0].n = 0.0020284;
+//	Dy[7][1].x1 = 11; Dy[7][1].y1 = 17; Dy[7][1].x2 = 40; Dy[7][1].y2 = 34; Dy[7][1].n = -0.0040568;
+//	Dy[7][2].x1 = 11; Dy[7][2].y1 = 34; Dy[7][2].x2 = 40; Dy[7][2].y2 = 51; Dy[7][2].n = 0.0020284;
+//
+//	Dxy[7][0].x1 = 6;  Dxy[7][0].y1 = 6;  Dxy[7][0].x2 = 23; Dxy[7][0].y2 = 23; Dxy[7][0].n = 0.00346021;
+//	Dxy[7][1].x1 = 28; Dxy[7][1].y1 = 6;  Dxy[7][1].x2 = 45; Dxy[7][1].y2 = 23; Dxy[7][1].n = -0.00346021;
+//	Dxy[7][2].x1 = 6;  Dxy[7][2].y1 = 28; Dxy[7][2].x2 = 23; Dxy[7][2].y2 = 45; Dxy[7][2].n = -0.00346021;
+//	Dxy[7][3].x1 = 28; Dxy[7][3].y1 = 28; Dxy[7][3].x2 = 45; Dxy[7][3].y2 = 45; Dxy[7][3].n = 0.00346021;
+//
+//	Dx[8][0].x1 = 0;  Dx[8][0].y1 = 17; Dx[8][0].x2 = 25; Dx[8][0].y2 = 58; Dx[8][0].n = 0.00097561;
+//	Dx[8][1].x1 = 25; Dx[8][1].y1 = 17; Dx[8][1].x2 = 50; Dx[8][1].y2 = 58; Dx[8][1].n = -0.00195122;
+//	Dx[8][2].x1 = 50; Dx[8][2].y1 = 17; Dx[8][2].x2 = 75; Dx[8][2].y2 = 58; Dx[8][2].n = 0.00097561;
+//
+//	Dy[8][0].x1 = 17; Dy[8][0].y1 = 0;  Dy[8][0].x2 = 58; Dy[8][0].y2 = 25; Dy[8][0].n = 0.00097561;
+//	Dy[8][1].x1 = 17; Dy[8][1].y1 = 25; Dy[8][1].x2 = 58; Dy[8][1].y2 = 50; Dy[8][1].n = -0.00195122;
+//	Dy[8][2].x1 = 17; Dy[8][2].y1 = 50; Dy[8][2].x2 = 58; Dy[8][2].y2 = 75; Dy[8][2].n = 0.00097561;
+//
+//	Dxy[8][0].x1 = 8;  Dxy[8][0].y1 = 8;  Dxy[8][0].x2 = 33; Dxy[8][0].y2 = 33; Dxy[8][0].n = 0.0016;
+//	Dxy[8][1].x1 = 42; Dxy[8][1].y1 = 8;  Dxy[8][1].x2 = 67; Dxy[8][1].y2 = 33; Dxy[8][1].n = -0.0016;
+//	Dxy[8][2].x1 = 8;  Dxy[8][2].y1 = 42; Dxy[8][2].x2 = 33; Dxy[8][2].y2 = 67; Dxy[8][2].n = -0.0016;
+//	Dxy[8][3].x1 = 42; Dxy[8][3].y1 = 42; Dxy[8][3].x2 = 67; Dxy[8][3].y2 = 67; Dxy[8][3].n = 0.0016;
 
 	/*9层模板共用一个缓存数组，缓存数组的行数为最大模板的尺寸*/
 	static int sumBuf[sumBufRow][sumCol];
@@ -234,26 +367,26 @@ void SURF::calcLayerDetAndTrace(
 			calcLayerDetAndTrace_layer:for(int k = 0; k < nTotalLayers; k++)
 			{
 				/*考虑此模板的采样步长*/
-				if((r & (((int)1 << sampleStep[k]) - 1)) == 0 && (c & (((int)1 << sampleStep[k]) - 1)) == 0)
+				if((r & (((int)1 << sampleSteps[k]) - 1)) == 0 && (c & (((int)1 << sampleSteps[k]) - 1)) == 0)
 				{
-					int cOffset = c - (size[k]);
+					int cOffset = c - (sizes[k]);
 
-					if(r > size[k] && cOffset > 0)
+					if(r > sizes[k] && cOffset > 0)
 					{
 						int rOffset = 0;
 						if(r < sumBufRow)
 						{
-							rOffset = r - size[k];
+							rOffset = r - sizes[k];
 						}
 						else{
-							rOffset = (sumBufRow - size[k]) - 1;
+							rOffset = (sumBufRow - sizes[k]) - 1;
 						}
 
 #ifdef DEBUG
 						if(k == 0 && c == sumCol - 1)
 						{
 							fout_rOffset << rOffset << std::endl;
-							for(int kr = 0; kr <= size[k]; kr++)
+							for(int kr = 0; kr <= sizes[k]; kr++)
 							{
 								for(int kc = 1; kc < sumCol; kc++)
 								{
@@ -265,9 +398,9 @@ void SURF::calcLayerDetAndTrace(
 						}
 #endif
 
-						dx  = calcHaarPattern(sumBuf, Dx[k], NX, sumBufIndex, rOffset, cOffset);
-						dy  = calcHaarPattern(sumBuf, Dy[k], NY, sumBufIndex, rOffset, cOffset);
-						dxy = calcHaarPattern(sumBuf, Dxy[k], NXY , sumBufIndex, rOffset, cOffset);
+						dx  = calcHaarPattern_x_y(sumBuf, Dx[k], sumBufIndex, rOffset, cOffset);
+						dy  = calcHaarPattern_x_y(sumBuf, Dy[k], sumBufIndex, rOffset, cOffset);
+						dxy = calcHaarPattern_xy(sumBuf, Dxy[k], sumBufIndex, rOffset, cOffset);
 						dt  = dx * dy - 0.9f * dxy * dxy;
 
 						switch (k) {
@@ -408,9 +541,9 @@ void SURF::calcLayerDetAndTrace(
 }
 
 void SURF::findCharacteristicPoint(
-		int size[nTotalLayers],
-		int sampleStep[nTotalLayers],
-		int middleIndices[nMiddleLayers],
+//		int size[nTotalLayers],
+//		int sampleStep[nTotalLayers],
+//		int middleIndices[nMiddleLayers],
 		hls::stream<float>& det0,
 		hls::stream<float>& det1,
 		hls::stream<float>& det2,
@@ -423,9 +556,11 @@ void SURF::findCharacteristicPoint(
 		hls::stream<float>& trace,
 		float hessianThreshold,
 		hls::stream<KeyPoint>& keyPoints,
-		int& pointNumber)
+		int* pointNumber)
 {
-
+	static int sizes[nTotalLayers] = {9, 15, 21, 15, 27, 39, 27, 51, 75};						// 每一层用的 Harr模板的大小
+	static int sampleSteps[nTotalLayers] = {0, 0, 0, 1, 1, 1, 2, 2, 2};				// 每一层用的采样步长是2的sampleSteps[nTotalLayers]次幂
+	static int middleIndices[nMiddleLayers] = {1, 4, 7};			// 中间层的索引值
 	static int detT[9] = {0};
 	static KeyPoint point;
 	static float N1[3][3][856];
@@ -460,7 +595,7 @@ void SURF::findCharacteristicPoint(
 
 		midIndex = middleIndices[ly];
 
-		iSOffset = ((size[midIndex - 1] - 1) >> 1);
+		iSOffset = ((sizes[midIndex - 1] - 1) >> 1);
 
 		findCharacteristicPoint_r0:for(int r = 0; r < detRow[midIndex - 1]; r++)
 			{
@@ -613,15 +748,15 @@ void SURF::findCharacteristicPoint(
 										 && val0 > N1[2][bRow[2]][c - 2] && val0 > N1[2][bRow[2]][c - 1] && val0 > N1[2][bRow[2]][c])
 									{
 										/*将坐标转换到原图像中的坐标*/
-										point.y = (r << sampleStep[midIndex]) + iSOffset;
-										point.x = (c << sampleStep[midIndex]) + iSOffset;
-										point.octave = 0;
+										point.range(31,17) = (r << sampleSteps[midIndex]) + iSOffset;
+										point.range(16,2) = (c << sampleSteps[midIndex]) + iSOffset;
+										point.range(1,0) = 0;
 										keyPoints << point;
 
 #ifdef DEBUG
-										fout_keyPoint << "(" << point.y << "," << point.x << ")" << std::endl;
+										fout_keyPoint << "(" << point.range(31,17) << "," << point.range(16,2) << ")" << std::endl;
 #endif
-										pointNumber++;
+										(*pointNumber)++;
 									}
 								}
 									break;
@@ -638,14 +773,14 @@ void SURF::findCharacteristicPoint(
 										 && val0 > N2[2][bRow[1]][c - 2] && val0 > N2[2][bRow[1]][c - 1] && val0 > N2[2][bRow[1]][c]
 										 && val0 > N2[2][bRow[2]][c - 2] && val0 > N2[2][bRow[2]][c - 1] && val0 > N2[2][bRow[2]][c])
 									{
-										point.y = (r << sampleStep[midIndex]) + iSOffset;
-										point.x = (c << sampleStep[midIndex]) + iSOffset;
-										point.octave = 1;
+										point.range(31,17) = (r << sampleSteps[midIndex]) + iSOffset;
+										point.range(16,2) = (c << sampleSteps[midIndex]) + iSOffset;
+										point.range(1,0) = 1;
 										keyPoints << point;
 #ifdef DEBUG
-										fout_keyPoint << "(" << point.y << "," << point.x << ")" << std::endl;
+										fout_keyPoint << "(" << point.range(31,17) << "," << point.range(16,2) << ")" << std::endl;
 #endif
-										pointNumber++;
+										(*pointNumber)++;
 									}
 								}
 									break;
@@ -662,14 +797,14 @@ void SURF::findCharacteristicPoint(
 										 && val0 > N3[2][bRow[1]][c - 2] && val0 > N3[2][bRow[1]][c - 1] && val0 > N3[2][bRow[1]][c]
 										 && val0 > N3[2][bRow[2]][c - 2] && val0 > N3[2][bRow[2]][c - 1] && val0 > N3[2][bRow[2]][c])
 									{
-										point.y = (r << sampleStep[midIndex]) + iSOffset;
-										point.x = (c << sampleStep[midIndex]) + iSOffset;
-										point.octave = 2;
+										point.range(31,17) = (r << sampleSteps[midIndex]) + iSOffset;
+										point.range(16,2) = (c << sampleSteps[midIndex]) + iSOffset;
+										point.range(1,0) = 2;
 										keyPoints << point;
 #ifdef DEBUG
-										fout_keyPoint << "(" << point.y << "," << point.x << ")" << std::endl;
+										fout_keyPoint << "(" << point.range(31,17) << "," << point.range(16,2) << ")" << std::endl;
 #endif
-										pointNumber++;
+										(*pointNumber)++;
 									}
 								}
 									break;
@@ -692,48 +827,16 @@ void SURF::findCharacteristicPoint(
 #endif
 }
 
-void SURF::HessianDetector(hls::stream<int>& sum,  hls::stream<KeyPoint>& keyPoints, int& pointNumber, int nOctaves, int nOctaveLayers, float hessianThreshold)
+void SURF::HessianDetector(hls::stream<int>& sum,  hls::stream<KeyPoint>& keyPoints, int* pointNumber, int nOctaves, int nOctaveLayers, float hessianThreshold)
 {
-	static const int SAMPLE_STEP = 0;
 
 	hls::stream<float> dets[nTotalLayers];				// 每一层图像 对应的 Hessian行列式的值
 	hls::stream<float> traces[nTotalLayers];			// 每一层图像 对应的 Hessian矩阵的迹的值
 
-	static int sizes[nTotalLayers];						// 每一层用的 Harr模板的大小
-	static int sampleSteps[nTotalLayers];				// 每一层用的采样步长是2的sampleSteps[nTotalLayers]次幂
-	static int middleIndices[nMiddleLayers];			// 中间层的索引值
-
-	static int index = 0, middleIndex = 0, step = SAMPLE_STEP;
-
-	HessianDetector_octave:for (int octave = 0; octave < nOctaves; octave++)
-	{
-
-		for (int layer = 0; layer < nOctaveLayers + 2; layer++)
-		{
-			sizes[index] = ((2 << octave) * (layer + 1) + 1) * 3;
-
-			sampleSteps[index] = step;
-
-			if (0 < layer && layer <= nOctaveLayers)
-			{
-				middleIndices[middleIndex++] = index;
-#ifdef DEBUG
-				fout_middleIndices << middleIndices[middleIndex - 1] << std::endl;
-#endif
-			}
-
-#ifdef DEBUG
-			fout_size_sampleSteps << sizes[index] <<" "<< ((int)1 << sampleSteps[index]) << std::endl;
-#endif
-			index++;
-		}
-		step += 1;
-	}
-
 	calcLayerDetAndTrace(
 			sum,
-			sizes,
-			sampleSteps,
+//			sizes,
+//			sampleSteps,
 			dets[0],
 			dets[1],
 			dets[2],
@@ -744,87 +847,11 @@ void SURF::HessianDetector(hls::stream<int>& sum,  hls::stream<KeyPoint>& keyPoi
 			dets[7],
 			dets[8],
 			traces[0]);
-//#ifdef DEBUG
-//	for(int k = 0; k < nTotalLayers; k++)
-//	{
-//		for(int dr = 0; dr < detRow[k]; dr++)
-//		{
-//			for(int dc = 0; dc < detCol[k]; dc++)
-//			{
-//				float s = 0;
-//				dets[k] >> s;
-//				switch (k) {
-//				case 0:
-//					fout_det0 << s <<" ";
-//					break;
-//				case 1:
-//					fout_det1 << s <<" ";
-//					break;
-//				case 2:
-//					fout_det2 << s <<" ";
-//					break;
-//				case 3:
-//					fout_det3 << s <<" ";
-//					break;
-//				case 4:
-//					fout_det4 << s <<" ";
-//					break;
-//				case 5:
-//					fout_det5 << s <<" ";
-//					break;
-//				case 6:
-//					fout_det6 << s <<" ";
-//					break;
-//				case 7:
-//					fout_det7 << s <<" ";
-//					break;
-//				case 8:
-//					fout_det8 << s <<" ";
-//					break;
-//				default:
-//					break;
-//				}
-//			}
-//			switch (k) {
-//			case 0:
-//				fout_det0 << std::endl;
-//				break;
-//			case 1:
-//				fout_det1 << std::endl;
-//				break;
-//			case 2:
-//				fout_det2 << std::endl;
-//				break;
-//			case 3:
-//				fout_det3 << std::endl;
-//				break;
-//			case 4:
-//				fout_det4 << std::endl;
-//				break;
-//			case 5:
-//				fout_det5 << std::endl;
-//				break;
-//			case 6:
-//				fout_det6 << std::endl;
-//				break;
-//			case 7:
-//				fout_det7 << std::endl;
-//				break;
-//			case 8:
-//				fout_det8 << std::endl;
-//				break;
-//			default:
-//				break;
-//			}
-//		}
-//	}
-//
-//#endif
 
 	findCharacteristicPoint(
-			sizes,
-			sampleSteps,
-			middleIndices,
+//			sizes,
+//			sampleSteps,
+//			middleIndices,
 			dets[0],
 			dets[1],
 			dets[2],

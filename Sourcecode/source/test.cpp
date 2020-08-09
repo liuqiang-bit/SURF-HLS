@@ -18,18 +18,18 @@ int main(int argc, char** argv)
 	cvMat2AXIvideo(src_rgb, src_axi);
 	hls::stream<KeyPoint> keyPoints;
 	KeyPoint keyPoint;
-
-	top(src_axi, keyPoints);
-
+	int kpn = 0;
+	top(src_axi, keyPoints, &kpn);
+std::cout << kpn << std::endl;
 	cv::KeyPoint point;
 	std::vector<cv::KeyPoint> points[3];
 
-	for(int i = 0; i < 600/*471*/; i++)
+	for(int i = 0; i < 415/*471*/; i++)
 	{
 		keyPoints >> keyPoint;
-		point.pt.y = keyPoint.y;
-		point.pt.x = keyPoint.x;
-		point.octave = keyPoint.octave;
+		point.pt.y = keyPoint.range(31, 17);
+		point.pt.x = keyPoint.range(16, 2);
+		point.octave = keyPoint.range(1, 0);
 		points[point.octave].push_back(point);
 	}
 	cv::drawKeypoints(src, points[0], kPImage, cv::Scalar(0, 0, 255), 0);

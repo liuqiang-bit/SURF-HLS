@@ -46,7 +46,8 @@ public:
 
 	void createHessianBox(const int box[4][5], SurfHB dst[4], int n, int oldSize, int newSize, int cols);
 
-	float calcHaarPattern(int sumBuf[sumBufRow][sumCol], SurfHB box[4], int n, ap_uint< sumBufRow << 3 > sumBufIndex, int rOffset, int cOffset);
+	float calcHaarPattern_x_y(int sumBuf[sumBufRow][sumCol], SurfHB box[4], ap_uint< sumBufRow << 3 > sumBufIndex, int rOffset, int cOffset);
+	float calcHaarPattern_xy(int sumBuf[sumBufRow][sumCol], SurfHB box[4], ap_uint< sumBufRow << 3 > sumBufIndex, int rOffset, int cOffset);
 
 	//bool interpolateKeypoint(float N[][9], int dx, int dy, int ds, my::KeyPoint& kpt);
 
@@ -54,8 +55,8 @@ public:
 
 	void calcLayerDetAndTrace(
 			hls::stream<int>& sum,
-			int size[nTotalLayers],
-			int sampleStep[nTotalLayers],
+//			int size[nTotalLayers],
+//			int sampleStep[nTotalLayers],
 			hls::stream<float>& det0,
 			hls::stream<float>& det1,
 			hls::stream<float>& det2,
@@ -69,9 +70,9 @@ public:
 
 
 	void findCharacteristicPoint(
-			int size[nTotalLayers],
-			int sampleStep[nTotalLayers],
-			int middleIndices[nMiddleLayers],
+//			int size[nTotalLayers],
+//			int sampleStep[nTotalLayers],
+//			int middleIndices[nMiddleLayers],
 			hls::stream<float>& det0,
 			hls::stream<float>& det1,
 			hls::stream<float>& det2,
@@ -84,9 +85,9 @@ public:
 			hls::stream<float>& trace,
 			float hessianThreshold,
 			hls::stream<KeyPoint>& keyPoints,
-			int& pointNumber);
+			int* pointNumber);
 
-	void HessianDetector(hls::stream<int>& sum, hls::stream<KeyPoint>& keyPoints, int& pointNumber, int nOctaves, int nOctaveLayers, float hessianThreshold);
+	void HessianDetector(hls::stream<int>& sum, hls::stream<KeyPoint>& keyPoints, int* pointNumber, int nOctaves, int nOctaveLayers, float hessianThreshold);
 };
 
 
