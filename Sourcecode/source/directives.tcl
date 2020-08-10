@@ -30,3 +30,6 @@ set_directive_unroll "SURF::findCharacteristicPoint/findCharacteristicPoint_laye
 set_directive_pipeline "SURF::findCharacteristicPoint/findCharacteristicPoint_c0"
 set_directive_pipeline "SURF::calcHaarPattern_x_y"
 set_directive_pipeline "SURF::calcHaarPattern_xy"
+set_directive_array_partition -type complete -dim 0 "SURF::calcLayerDetAndTrace" Dx
+set_directive_array_partition -type complete -dim 0 "SURF::calcLayerDetAndTrace" Dy
+set_directive_array_partition -type complete -dim 0 "SURF::calcLayerDetAndTrace" Dxy

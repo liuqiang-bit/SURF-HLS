@@ -108,62 +108,60 @@ void SURF::integralImg(AXI_STREAM_24& video_in, hls::stream<int>& dst)
 	}
 }
 
-float SURF::calcHaarPattern_x_y(int sumBuf[sumBufRow][sumCol], SurfHB box[4], ap_uint< sumBufRow << 3 > sumBufIndex, int rOffset, int cOffset)
+float SURF::calcHaarPattern_x_y(int sumBuf[sumBufRow][sumCol], const SurfHB box[3][5], ap_uint< sumBufRow << 3 > sumBufIndex, int rOffset, int cOffset)
 {
 
 	float d = 0;
 	calcHaarPattern_kn:for(int kn = 0; kn < 3; kn++)
 	{
 		d += (
-			 sumBuf[sumBufIndex.range(((box[kn].y2 + 1 + rOffset) << 3) - 1, (box[kn].y2 + rOffset) << 3)][box[kn].x2 + cOffset]
-			-sumBuf[sumBufIndex.range(((box[kn].y2 + 1 + rOffset) << 3) - 1, (box[kn].y2 + rOffset) << 3)][box[kn].x1 + cOffset]
-			-sumBuf[sumBufIndex.range(((box[kn].y1 + 1 + rOffset) << 3) - 1, (box[kn].y1 + rOffset) << 3)][box[kn].x2 + cOffset]
-			+sumBuf[sumBufIndex.range(((box[kn].y1 + 1 + rOffset) << 3) - 1, (box[kn].y1 + rOffset) << 3)][box[kn].x1 + cOffset]
-			 ) * box[kn].n;
+			 sumBuf[sumBufIndex.range((((int)box[kn][3] + 1 + rOffset) << 3) - 1, ((int)box[kn][3] + rOffset) << 3)][(int)box[kn][2] + cOffset]
+			-sumBuf[sumBufIndex.range((((int)box[kn][3] + 1 + rOffset) << 3) - 1, ((int)box[kn][3] + rOffset) << 3)][(int)box[kn][0] + cOffset]
+			-sumBuf[sumBufIndex.range((((int)box[kn][1] + 1 + rOffset) << 3) - 1, ((int)box[kn][1] + rOffset) << 3)][(int)box[kn][2] + cOffset]
+			+sumBuf[sumBufIndex.range((((int)box[kn][1] + 1 + rOffset) << 3) - 1, ((int)box[kn][1] + rOffset) << 3)][(int)box[kn][0] + cOffset]
+			 ) * box[kn][4];
 	}
 	return d;
 }
 
-float SURF::calcHaarPattern_xy(int sumBuf[sumBufRow][sumCol], SurfHB box[4], ap_uint< sumBufRow << 3 > sumBufIndex, int rOffset, int cOffset)
+float SURF::calcHaarPattern_xy(int sumBuf[sumBufRow][sumCol], const SurfHB box[4][5], ap_uint< sumBufRow << 3 > sumBufIndex, int rOffset, int cOffset)
 {
 
 	float d = 0;
 	calcHaarPattern_kn:for(int kn = 0; kn < 4; kn++)
 	{
 		d += (
-			 sumBuf[sumBufIndex.range(((box[kn].y2 + 1 + rOffset) << 3) - 1, (box[kn].y2 + rOffset) << 3)][box[kn].x2 + cOffset]
-			-sumBuf[sumBufIndex.range(((box[kn].y2 + 1 + rOffset) << 3) - 1, (box[kn].y2 + rOffset) << 3)][box[kn].x1 + cOffset]
-			-sumBuf[sumBufIndex.range(((box[kn].y1 + 1 + rOffset) << 3) - 1, (box[kn].y1 + rOffset) << 3)][box[kn].x2 + cOffset]
-			+sumBuf[sumBufIndex.range(((box[kn].y1 + 1 + rOffset) << 3) - 1, (box[kn].y1 + rOffset) << 3)][box[kn].x1 + cOffset]
-			 ) * box[kn].n;
+			 sumBuf[sumBufIndex.range((((int)box[kn][3] + 1 + rOffset) << 3) - 1, ((int)box[kn][3] + rOffset) << 3)][(int)box[kn][2] + cOffset]
+			-sumBuf[sumBufIndex.range((((int)box[kn][3] + 1 + rOffset) << 3) - 1, ((int)box[kn][3] + rOffset) << 3)][(int)box[kn][0] + cOffset]
+			-sumBuf[sumBufIndex.range((((int)box[kn][1] + 1 + rOffset) << 3) - 1, ((int)box[kn][1] + rOffset) << 3)][(int)box[kn][2] + cOffset]
+			+sumBuf[sumBufIndex.range((((int)box[kn][1] + 1 + rOffset) << 3) - 1, ((int)box[kn][1] + rOffset) << 3)][(int)box[kn][0] + cOffset]
+			 ) * box[kn][4];
 	}
 	return d;
 }
 void SURF::createHessianBox(const int box[4][5], SurfHB dst[4], int n, int oldSize, int newSize, int cols)
 {
-	float ratio = (float)newSize / oldSize;
-	createHessianBox_i:for (int i = 0; i < n; i++)
-	{
-		dst[i].x1 = hls::round(box[i][0] * ratio);
-		dst[i].y1 = hls::round(box[i][1] * ratio);
-		dst[i].x2 = hls::round(box[i][2] * ratio);
-		dst[i].y2 = hls::round(box[i][3] * ratio);
-
-		dst[i].n = box[i][4] / (float)((dst[i].y2 - dst[i].y1) * (dst[i].x2 - dst[i].x1));
-
-#ifdef DEBUG
-		fout_HBox << dst[i].x1 <<" "<< dst[i].y1 <<" "<< dst[i].x2 <<" "<< dst[i].y2 <<" "<< dst[i].n << std::endl;
-#endif
-	}
-#ifdef DEBUG
-	fout_HBox << std::endl;
-#endif
+//	float ratio = (float)newSize / oldSize;
+//	createHessianBox_i:for (int i = 0; i < n; i++)
+//	{
+//		dst[i].x1 = hls::round(box[i][0] * ratio);
+//		dst[i].y1 = hls::round(box[i][1] * ratio);
+//		dst[i].x2 = hls::round(box[i][2] * ratio);
+//		dst[i].y2 = hls::round(box[i][3] * ratio);
+//
+//		dst[i].n = box[i][4] / (float)((dst[i].y2 - dst[i].y1) * (dst[i].x2 - dst[i].x1));
+//
+//#ifdef DEBUG
+//		fout_HBox << dst[i].x1 <<" "<< dst[i].y1 <<" "<< dst[i].x2 <<" "<< dst[i].y2 <<" "<< dst[i].n << std::endl;
+//#endif
+//	}
+//#ifdef DEBUG
+//	fout_HBox << std::endl;
+//#endif
 }
 
 void SURF::calcLayerDetAndTrace(
 		hls::stream<int>& sum,
-//		int size[nTotalLayers],
-//		int sampleStep[nTotalLayers],
 		hls::stream<float>& det0,
 		hls::stream<float>& det1,
 		hls::stream<float>& det2,
@@ -187,18 +185,107 @@ void SURF::calcLayerDetAndTrace(
 
 	/*定义盒子滤波器*/
 	static const int NX = 3, NY = 3, NXY = 4;
-	static const int dx_s[NXY][5]  = { { 0, 2, 3, 7, 1 }, { 3, 2, 6, 7, -2 }, { 6, 2, 9, 7, 1 }, {0, 0, 0, 0, 0} };
-	static const int dy_s[NXY][5]  = { { 2, 0, 7, 3, 1 }, { 2, 3, 7, 6, -2 }, { 2, 6, 7, 9, 1 }, {0, 0, 0, 0, 0} };
-	static const int dxy_s[NXY][5] = { { 1, 1, 4, 4, 1 }, { 5, 1, 8, 4, -1 }, { 1, 5, 4, 8, -1 }, { 5, 5, 8, 8, 1 } };
+//	static const int dx_s[NXY][5]  = { { 0, 2, 3, 7, 1 }, { 3, 2, 6, 7, -2 }, { 6, 2, 9, 7, 1 }, {0, 0, 0, 0, 0} };
+//	static const int dy_s[NXY][5]  = { { 2, 0, 7, 3, 1 }, { 2, 3, 7, 6, -2 }, { 2, 6, 7, 9, 1 }, {0, 0, 0, 0, 0} };
+//	static const int dxy_s[NXY][5] = { { 1, 1, 4, 4, 1 }, { 5, 1, 8, 4, -1 }, { 1, 5, 4, 8, -1 }, { 5, 5, 8, 8, 1 } };
 
-	static SurfHB Dx[nTotalLayers][NXY], Dy[nTotalLayers][NXY], Dxy[nTotalLayers][NXY];
-	calcLayerDetAndTrace_hessian:for(int i = 0; i < nTotalLayers; i++)
+	static const SurfHB Dx[nTotalLayers][NX][5] =
 	{
-		/*有优化空间，目前及其耗费FF和LUT,可考虑去掉此步骤，直接调用生成好的hessianBox*/
-		createHessianBox(dx_s, Dx[i], NX, 9, sizes[i], sumCol);
-		createHessianBox(dy_s, Dy[i], NY, 9, sizes[i], sumCol);
-		createHessianBox(dxy_s, Dxy[i], NXY, 9, sizes[i], sumCol);
-	}
+			{
+					{0, 2, 3, 7, 0.0666667}, {3, 2, 6, 7, -0.133333}, {6, 2, 9, 7, 0.0666667}
+			},
+			{
+					{0, 3, 5, 12, 0.0222222}, {5, 3, 10, 12, -0.0444444}, {10, 3, 15, 12, 0.0222222}
+			},
+			{
+					{0, 5, 7, 16, 0.012987}, {7, 5, 14, 16, -0.025974}, {14, 5, 21, 16, 0.012987}
+			},
+			{
+					{0, 3, 5, 12, 0.0222222}, {5, 3, 10, 12, -0.0444444}, {10, 3, 15, 12, 0.0222222}
+			},
+			{
+					{0, 6, 9, 21, 0.00740741}, {9, 6, 18, 21, -0.0148148}, {18, 6, 27, 21, 0.00740741}
+			},
+			{
+					{0, 9, 13, 30, 0.003663}, {13, 9, 26, 30, -0.00732601}, {26, 9, 39, 30, 0.003663}
+			},
+			{
+					{0, 6, 9, 21, 0.00740741}, {9, 6, 18, 21, -0.0148148}, {18, 6, 27, 21, 0.00740741}
+			},
+			{
+					{0, 11, 17, 40, 0.0020284}, {17, 11, 34, 40, -0.0040568}, {34, 11, 51, 40, 0.0020284}
+			},
+			{
+					{0, 17, 25, 58, 0.00097561}, {25, 17, 50, 58, -0.00195122}, {50, 17, 75, 58, 0.00097561}
+			}
+	};
+	static const SurfHB Dy[nTotalLayers][NY][5] =
+	{
+			{
+					{2, 0, 7, 3, 0.0666667}, {2, 3, 7, 6, -0.133333}, {2, 6, 7, 9, 0.0666667}
+			},
+			{
+					{3, 0, 12, 5, 0.0222222}, {3, 5, 12, 10, -0.0444444}, {3, 10, 12, 15, 0.0222222}
+			},
+			{
+					{5, 0, 16, 7, 0.012987}, {5, 7, 16, 14, -0.025974}, {5, 14, 16, 21, 0.012987}
+			},
+			{
+					{3, 0, 12, 5, 0.0222222}, {3, 5, 12, 10, -0.0444444}, {3, 10, 12, 15, 0.0222222}
+			},
+			{
+					{6, 0, 21, 9, 0.00740741}, {6, 9, 21, 18, -0.0148148}, {6, 18, 21, 27, 0.00740741}
+			},
+			{
+					{9, 0, 30, 13, 0.003663}, {9, 13, 30, 26, -0.00732601}, {9, 26, 30, 39, 0.003663}
+			},
+			{
+					{6, 0, 21, 9, 0.00740741}, {6, 9, 21, 18, -0.0148148}, {6, 18, 21, 27, 0.00740741}
+			},
+			{
+					{11, 0, 40, 17, 0.0020284}, {11, 17, 40, 34, -0.0040568}, {11, 34, 40, 51, 0.0020284}
+			},
+			{
+					{17, 0, 58, 25, 0.00097561}, {17, 25, 58, 50, -0.00195122}, {17, 50, 58, 75, 0.00097561}
+			}
+	};
+	static const  SurfHB Dxy[nTotalLayers][NXY][5] =
+	{
+			{
+					{1, 1, 4, 4, 0.111111}, {5, 1, 8, 4, -0.111111}, {1, 5, 4, 8, -0.111111}, {5, 5, 8, 8, 0.111111}
+			},
+			{
+					{2, 2, 7, 7, 0.04}, {8, 2, 13, 7, -0.04}, {2, 8, 7, 13, -0.04}, {8, 8, 13, 13, 0.04}
+			},
+			{
+					{2, 2, 9, 9, 0.0204082}, {12, 2, 19, 9, -0.0204082}, {2, 12, 9, 19, -0.0204082}, {12, 12, 19, 19, 0.0204082}
+			},
+			{
+					{2, 2, 7, 7, 0.04}, {8, 2, 13, 7, -0.04}, {2, 8, 7, 13, -0.04}, {8, 8, 13, 13, 0.04}
+			},
+			{
+					{3, 3, 12, 12, 0.0123457}, {15, 3, 24, 12, -0.0123457}, {3, 15, 12, 24, -0.0123457}, {15, 15, 24, 24, 0.0123457}
+			},
+			{
+					{4, 4, 17, 17, 0.00591716}, {22, 4, 35, 17, -0.00591716}, {4, 22, 17, 35, -0.00591716}, {22, 22, 35, 35, 0.00591716}
+			},
+			{
+					{3, 3, 12, 12, 0.0123457}, {15, 3, 24, 12, - 0.0123457}, {3, 15, 12, 24, - 0.0123457}, {15, 15, 24, 24, 0.0123457}
+			},
+			{
+					{6, 6, 23, 23, 0.00346021}, {28, 6, 45, 23, - 0.00346021}, {6, 28, 23, 45, - 0.00346021}, {28, 28, 45, 45, 0.00346021}
+			},
+			{
+					{8, 8, 33, 33, 0.0016}, {42, 8, 67, 33, - 0.0016}, {8, 42, 33, 67, - 0.0016}, {42, 42, 67, 67, 0.0016}
+			}
+	};
+//	calcLayerDetAndTrace_hessian:for(int i = 0; i < nTotalLayers; i++)
+//	{
+//		/*有优化空间，目前及其耗费FF和LUT,可考虑去掉此步骤，直接调用生成好的hessianBox*/
+//		createHessianBox(dx_s, Dx[i], NX, 9, sizes[i], sumCol);
+//		createHessianBox(dy_s, Dy[i], NY, 9, sizes[i], sumCol);
+//		createHessianBox(dxy_s, Dxy[i], NXY, 9, sizes[i], sumCol);
+//	}
 //	Dx[0][0].x1 = 0; Dx[0][0].y1 = 2; Dx[0][0].x2 = 3; Dx[0][0].y2 = 7; Dx[0][0].n = 0.0666667;
 //	Dx[0][1].x1 = 3; Dx[0][1].y1 = 2; Dx[0][1].x2 = 6; Dx[0][1].y2 = 7; Dx[0][1].n = -0.133333;
 //	Dx[0][2].x1 = 6; Dx[0][2].y1 = 2; Dx[0][2].x2 = 9; Dx[0][2].y2 = 7; Dx[0][2].n = 0.0666667;
@@ -835,8 +922,6 @@ void SURF::HessianDetector(hls::stream<int>& sum,  hls::stream<KeyPoint>& keyPoi
 
 	calcLayerDetAndTrace(
 			sum,
-//			sizes,
-//			sampleSteps,
 			dets[0],
 			dets[1],
 			dets[2],
@@ -849,9 +934,6 @@ void SURF::HessianDetector(hls::stream<int>& sum,  hls::stream<KeyPoint>& keyPoi
 			traces[0]);
 
 	findCharacteristicPoint(
-//			sizes,
-//			sampleSteps,
-//			middleIndices,
 			dets[0],
 			dets[1],
 			dets[2],

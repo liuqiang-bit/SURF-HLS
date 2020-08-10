@@ -19,6 +19,7 @@ typedef hls::Scalar<3, unsigned char>                 PIXEL_C3;
 typedef hls::Mat<MAX_HEIGHT, MAX_WIDTH, HLS_8UC3>     IMAGE_C3;
 
 typedef ap_uint<32> KeyPoint;
+typedef float SurfHB;
 //typedef	struct{
 //	int y, x, octave;
 //}KeyPoint;

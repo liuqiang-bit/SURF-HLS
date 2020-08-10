@@ -35,10 +35,10 @@ private:
 
 	static const int MaxSize = 1920;
 
-	typedef struct{
-		int x1, x2, y1, y2;
-		float n;
-	}SurfHB;
+//	typedef struct{
+//		int x1, x2, y1, y2;
+//		float n;
+//	}SurfHB;
 
 public:
 
@@ -46,8 +46,8 @@ public:
 
 	void createHessianBox(const int box[4][5], SurfHB dst[4], int n, int oldSize, int newSize, int cols);
 
-	float calcHaarPattern_x_y(int sumBuf[sumBufRow][sumCol], SurfHB box[4], ap_uint< sumBufRow << 3 > sumBufIndex, int rOffset, int cOffset);
-	float calcHaarPattern_xy(int sumBuf[sumBufRow][sumCol], SurfHB box[4], ap_uint< sumBufRow << 3 > sumBufIndex, int rOffset, int cOffset);
+	float calcHaarPattern_x_y(int sumBuf[sumBufRow][sumCol], const SurfHB box[3][5], ap_uint< sumBufRow << 3 > sumBufIndex, int rOffset, int cOffset);
+	float calcHaarPattern_xy(int sumBuf[sumBufRow][sumCol], const SurfHB box[4][5], ap_uint< sumBufRow << 3 > sumBufIndex, int rOffset, int cOffset);
 
 	//bool interpolateKeypoint(float N[][9], int dx, int dy, int ds, my::KeyPoint& kpt);
 
