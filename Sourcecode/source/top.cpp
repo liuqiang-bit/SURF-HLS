@@ -15,8 +15,8 @@ void consume(hls::stream<T>& S, int row, int col)
 	}
 }
 
-void top(AXI_STREAM_24& video_in, hls::stream<KeyPoint>& keyPoints, int* kpn){
-#pragma HLS INTERFACE axis register both port=keyPoints
+void top(AXI_STREAM_24& video_in, KeyPoint* keyPoints, int* kpn){
+#pragma HLS INTERFACE m_axi depth=32 port=keyPoints
 #pragma HLS INTERFACE m_axi depth=32 port=kpn
 #pragma HLS INTERFACE axis register both port=video_in
 
