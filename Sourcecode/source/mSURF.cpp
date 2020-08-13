@@ -513,7 +513,7 @@ void SURF::calcLayerDetAndTrace(
 			fout_rIndex << rIndex << std::endl;
 #endif
 
-	#pragma HLS LOOP_TRIPCOUNT min=1 max=567
+	#pragma HLS LOOP_TRIPCOUNT min=1 max=601
 			if(r < sumBufRow)
 			{
 				sumBufIndex.range(((r + 1) << 3) - 1, r << 3) = r;
@@ -537,7 +537,7 @@ void SURF::calcLayerDetAndTrace(
 		calcLayerDetAndTrace_col:for (int c = 0; c < sumCol; c++)
 		{
 			static SurfHB dx = 0, dy = 0, dxy = 0, dt = 0, tt = 0;
-#pragma HLS LOOP_TRIPCOUNT min=1 max=866
+#pragma HLS LOOP_TRIPCOUNT min=1 max=801
 			sum >> sumBuf[rIndex][c];
 
 			/*所有尺寸的模板遍历积分图*/
@@ -718,9 +718,6 @@ void SURF::calcLayerDetAndTrace(
 }
 
 void SURF::findCharacteristicPoint(
-//		int size[nTotalLayers],
-//		int sampleStep[nTotalLayers],
-//		int middleIndices[nMiddleLayers],
 		hls::stream<float>& det0,
 		hls::stream<float>& det1,
 		hls::stream<float>& det2,
@@ -738,16 +735,16 @@ void SURF::findCharacteristicPoint(
 #ifdef DEBUG
 	static int detT[nTotalLayers] = {0};
 #endif
-	static const int detRow[nTotalLayers] = {557, 551, 545, 276, 270, 264, 135, 129, 123};
-	static const int detCol[nTotalLayers] = {856, 850, 844, 425, 419, 413, 210, 204, 198};
+	static const int detRow[nTotalLayers] = {591, 585, 579, 293, 287, 281, 144, 138, 132};
+	static const int detCol[nTotalLayers] = {791, 785, 779, 393, 387, 381, 194, 188, 182};
 	static int sizes[nTotalLayers] = {9, 15, 21, 15, 27, 39, 27, 51, 75};						// 每一层用的 Harr模板的大小
 	static int sampleSteps[nTotalLayers] = {0, 0, 0, 1, 1, 1, 2, 2, 2};				// 每一层用的采样步长是2的sampleSteps[nTotalLayers]次幂
 	static int middleIndices[nMiddleLayers] = {1, 4, 7};			// 中间层的索引值
 
 	static KeyPoint point;
-	static float N1[3][3][856];
-	static float N2[3][3][425];
-	static float N3[3][3][210];
+	static float N1[3][3][791];
+	static float N2[3][3][393];
+	static float N3[3][3][194];
 
 	static int tmpPointNum = 0;
 	static ap_uint<2> bRow[3] = {0};

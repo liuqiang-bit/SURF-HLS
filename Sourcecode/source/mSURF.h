@@ -16,11 +16,11 @@
 
 #define MaxRow 1080
 #define MaxCol 1920
-#define ROW 566
-#define COL 865
+#define ROW 600
+#define COL 800
 
-#define sumRow 567
-#define sumCol 866
+#define sumRow 601
+#define sumCol 801
 
 #define sumBufRow 76
 
