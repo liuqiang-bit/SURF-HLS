@@ -19,9 +19,6 @@ set_directive_loop_tripcount -min 1 -max 858 "SURF::findCharacteristicPoint/find
 set_directive_loop_tripcount -min 1 -max 858 "SURF::findCharacteristicPoint/findCharacteristicPoint_c0"
 set_directive_pipeline "SURF::createHessianBox"
 set_directive_pipeline "SURF::calcHaarPattern"
-set_directive_resource -core RAM_2P_LUTRAM "SURF::findCharacteristicPoint" N1
-set_directive_resource -core RAM_2P_LUTRAM "SURF::findCharacteristicPoint" N2
-set_directive_resource -core RAM_2P_LUTRAM "SURF::findCharacteristicPoint" N3
 set_directive_pipeline "SURF::calcLayerDetAndTrace/calcLayerDetAndTrace_layer"
 set_directive_pipeline "SURF::findCharacteristicPoint/findCharacteristicPoint_c0"
 set_directive_unroll "SURF::calcLayerDetAndTrace/calcLayerDetAndTrace_layer"
@@ -33,3 +30,14 @@ set_directive_pipeline "SURF::calcHaarPattern_xy"
 set_directive_array_partition -type complete -dim 0 "SURF::calcLayerDetAndTrace" Dx
 set_directive_array_partition -type complete -dim 0 "SURF::calcLayerDetAndTrace" Dy
 set_directive_array_partition -type complete -dim 0 "SURF::calcLayerDetAndTrace" Dxy
+set_directive_array_partition -type complete -dim 0 "SURF::findCharacteristicPoint" sizes
+set_directive_array_partition -type complete -dim 0 "SURF::findCharacteristicPoint" sampleSteps
+set_directive_array_partition -type complete -dim 0 "SURF::findCharacteristicPoint" middleIndices
+set_directive_array_partition -type complete -dim 0 "SURF::findCharacteristicPoint" detRow
+set_directive_array_partition -type complete -dim 0 "SURF::findCharacteristicPoint" detCol
+set_directive_array_partition -type complete -dim 0 "SURF::calcLayerDetAndTrace" sizes
+set_directive_array_partition -type complete -dim 0 "SURF::calcLayerDetAndTrace" sampleSteps
+set_directive_array_partition -type complete -dim 1 "SURF::calcLayerDetAndTrace" sumBuf
+set_directive_array_partition -type complete -dim 0 "SURF::findCharacteristicPoint" bRow
+set_directive_array_partition -type complete -dim 0 "SURF::HessianDetector" dets
+set_directive_array_partition -type complete -dim 0 "SURF::HessianDetector" traces

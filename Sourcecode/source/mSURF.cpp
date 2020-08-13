@@ -42,9 +42,6 @@ std::ofstream fout_keyPoint("C:/Users/GUDONG/Desktop/HLS_SURF/common/OutputFile/
 std::ofstream fout_rOffset("C:/Users/GUDONG/Desktop/HLS_SURF/common/OutputFile/rOffset.txt");
 #endif
 
-static const int detRow[nTotalLayers] = {557, 551, 545, 276, 270, 264, 135, 129, 123};
-static const int detCol[nTotalLayers] = {856, 850, 844, 425, 419, 413, 210, 204, 198};
-
 static int margin = 3;
 
 SURF::SURF()
@@ -173,15 +170,16 @@ void SURF::calcLayerDetAndTrace(
 		hls::stream<float>& det8,
 		hls::stream<float>& trace)
 {
-
+#ifdef DEBUG
+	static int detT[nTotalLayers] = {0};
+#endif
 	static int sizes[nTotalLayers] = {9, 15, 21, 15, 27, 39, 27, 51, 75};						// 每一层用的 Harr模板的大小
 	static int sampleSteps[nTotalLayers] = {0, 0, 0, 1, 1, 1, 2, 2, 2};							// 每一层用的采样步长是2的sampleSteps[nTotalLayers]次幂
-	static int detT[nTotalLayers] = {0};
-	static int sample_r[nTotalLayers];
-	static int sample_c[nTotalLayers];
+//	static int sample_r[nTotalLayers];
+//	static int sample_c[nTotalLayers];
 
-	//不处理的边界大小
-	static int margin[nTotalLayers];
+//	//不处理的边界大小
+//	static int margin[nTotalLayers];
 
 	/*定义盒子滤波器*/
 	static const int NX = 3, NY = 3, NXY = 4;
@@ -737,18 +735,19 @@ void SURF::findCharacteristicPoint(
 		KeyPoint* keyPoints,
 		int* pointNumber)
 {
+#ifdef DEBUG
+	static int detT[nTotalLayers] = {0};
+#endif
+	static const int detRow[nTotalLayers] = {557, 551, 545, 276, 270, 264, 135, 129, 123};
+	static const int detCol[nTotalLayers] = {856, 850, 844, 425, 419, 413, 210, 204, 198};
 	static int sizes[nTotalLayers] = {9, 15, 21, 15, 27, 39, 27, 51, 75};						// 每一层用的 Harr模板的大小
 	static int sampleSteps[nTotalLayers] = {0, 0, 0, 1, 1, 1, 2, 2, 2};				// 每一层用的采样步长是2的sampleSteps[nTotalLayers]次幂
 	static int middleIndices[nMiddleLayers] = {1, 4, 7};			// 中间层的索引值
-	static int detT[9] = {0};
+
 	static KeyPoint point;
 	static float N1[3][3][856];
 	static float N2[3][3][425];
 	static float N3[3][3][210];
-
-	/*特征点在原图中的坐标*/
-	static int center_r = 0;
-	static int center_c = 0;
 
 	static int tmpPointNum = 0;
 	static ap_uint<2> bRow[3] = {0};
