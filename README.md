@@ -1,4 +1,10 @@
 # SURF-HLS
+GitHub地址：https://github.com/liuqiang-bit/SURF-HLS.git
+
+作者：GUDONG		时间：2020/08/28		软件：Vivado HLS 2018.3
+
+> 资源占用更小，性能指标更好参考简化版本：https://github.com/liuqiang-bit/SURF_HLS_Simplified.git
+
 ## 使用HLS实现SURF算法
 
 ### 一，项目介绍
@@ -28,10 +34,6 @@
 #### 2，项目目录
 
 ![项目目录结构](F:\MyGit\SURF-HLS\images\项目目录结构.png)
-
-#### 3，工具版本
-
-vivado HLS 2018.3
 
 
 
