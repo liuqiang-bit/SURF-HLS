@@ -3,15 +3,13 @@ GitHub地址：https://github.com/liuqiang-bit/SURF-HLS.git
 
 作者：GUDONG		时间：2020/08/28		软件：Vivado HLS 2018.3
 
-> 资源占用更小，性能指标更好参考简化版本：https://github.com/liuqiang-bit/SURF_HLS_Simplified.git
-
 ## 使用HLS实现SURF算法
 
 ### 一，项目介绍
 
 本项目旨在利用HLS实现SURF算法, 目前已实现特征点检测的仿真，在**Sourcecode\source\mSURF.cpp**中添加DEBUG宏定义以输出各阶段运算数据
 
-#### 1，文件说明
+#### 1、文件说明
 
 **Sourcecode\common\images**文件夹里的**1.png**为测试用的图片
 
@@ -31,11 +29,13 @@ GitHub地址：https://github.com/liuqiang-bit/SURF-HLS.git
 
 ​		**keyPoint.png**为绘制的特征点
 
-#### 2，项目目录
+## 2、运行结果
 
-![项目目录结构](F:\MyGit\SURF-HLS\images\项目目录结构.png)
+![](F:\MyGit\SURF-HLS\images\1.png)
 
+## 3、性能指标
 
+> 资源占用更小，性能指标更好参考简化版本：https://github.com/liuqiang-bit/SURF_HLS_Simplified.git
 
-
+<img src="F:\MyGit\SURF-HLS\images\2.png" style="zoom:50%;" />
 
