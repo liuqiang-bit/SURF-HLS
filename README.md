@@ -38,6 +38,3 @@ GitHub地址：https://github.com/liuqiang-bit/SURF-HLS.git
 > 资源占用更小，性能指标更好参考简化版本：https://github.com/liuqiang-bit/SURF_HLS_Simplified.git
 
 <img src="F:\MyGit\SURF-HLS\images\2.png" style="zoom:50%;" />
-
-1234
-
